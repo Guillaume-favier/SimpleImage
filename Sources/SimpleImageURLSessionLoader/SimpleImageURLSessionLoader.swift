@@ -15,7 +15,21 @@ public final class SimpleImageURLSessionLoader: SimpleImageLoader {
     self.urlSession = urlSession
   }
   
-  public func imageData(for request: URLRequest) async throws -> Data {
-    try await self.urlSession.data(for: request).0
+  public func imageData(
+    for request: URLRequest,
+    progressHandler: @escaping @Sendable (Double) -> Void
+  ) async throws -> Data {
+    var (byteStream, response) = try await self.urlSession.bytes(for: request)
+    
+    let expectedContentLength = Int(response.expectedContentLength)
+    var data = Data(capacity: expectedContentLength)
+    progressHandler(0)
+    
+    for try await byte in byteStream {
+      data.append(byte)
+      progressHandler(Double(data.count)/Double(expectedContentLength))
+    }
+    
+    return data
   }
 }

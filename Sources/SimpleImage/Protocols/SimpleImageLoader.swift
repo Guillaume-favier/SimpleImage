@@ -9,5 +9,8 @@ import Foundation
 import UIKit
 
 public protocol SimpleImageLoader: Sendable {
-  func imageData(for request: URLRequest) async throws -> Data
+  func imageData(
+    for request: URLRequest,
+    progressHandler: @escaping @Sendable (Double) -> Void
+  ) async throws -> Data
 }

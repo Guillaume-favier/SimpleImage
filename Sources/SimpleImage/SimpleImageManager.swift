@@ -48,6 +48,18 @@ public final class SimpleImageManager: Sendable {
     )
   }
   
+  public func retrieveImage(
+    imageRequest: SimpleImageRequest
+  ) -> SimpleImageTask {
+    return SimpleImageTask(
+      imageRequest: imageRequest,
+      imageManager: self,
+      completionHandler: { request, imageResult, cacheKey in
+        // No-op
+      }
+    )
+  }
+  
   func cacheTask(request: SimpleImageRequest) -> SimpleImageCacheTask {
     self.lock.withLock {
       let taskIdentifier = request.cacheKey

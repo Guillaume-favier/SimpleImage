@@ -9,7 +9,7 @@
 import Foundation
 import UIKit
 
-public struct SimpleImageRequest: Sendable {
+public struct SimpleImageRequest: Sendable, Equatable {
   public let urlRequest: URLRequest
   public let processors: [any SimpleImageProcessor]
   public let unprocessedCacheKey: String
@@ -26,5 +26,9 @@ public struct SimpleImageRequest: Sendable {
     
     let processorIdentifier = processors.lazy.map { "\($0.identifier)" }.joined(separator: "-")
     self.cacheKey = "\(urlRequest.url!.absoluteString)--\(processorIdentifier)"
+  }
+  
+  public static func == (lhs: SimpleImageRequest, rhs: SimpleImageRequest) -> Bool {
+    lhs.urlRequest == rhs.urlRequest && lhs.cacheKey == rhs.cacheKey && lhs.unprocessedCacheKey == rhs.unprocessedCacheKey
   }
 }
