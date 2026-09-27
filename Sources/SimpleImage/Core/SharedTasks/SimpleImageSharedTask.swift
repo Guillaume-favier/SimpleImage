@@ -97,6 +97,11 @@ class SimpleImageSharedTask: @unchecked Sendable {
     self.completionHandler(self, .failure(CancellationError()), nil)
   }
   
+  func reportProgress(_ fraction: Double) {
+    let subscribers = lock.withLock { Array(children.values) }
+    subscribers.forEach { $0.reportProgress(fraction) }
+  }
+
   func finish(with result: Result<UIImage, Error>, cacheKey: String?) {
     self.lock.lock()
     guard case .working = self.state else {

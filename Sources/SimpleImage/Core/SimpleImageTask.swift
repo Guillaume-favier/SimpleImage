@@ -34,12 +34,15 @@ public final class SimpleImageTask: Sendable {
   
   private let completionHandler: @Sendable (SimpleImageTask, Result<UIImage, Error>, String?) -> Void
   private let lock = NSLock()
+  private let progressHandler: SimpleImageManager.ProgressHandler?
   
   init(
     imageRequest: SimpleImageRequest,
     imageManager: SimpleImageManager,
+    progressHandler: SimpleImageManager.ProgressHandler?,
     completionHandler: @escaping @Sendable (SimpleImageTask, Result<UIImage, Error>, String?) -> Void
   ) {
+    self.progressHandler = progressHandler
     self.id = UUID()
     self.imageRequest = imageRequest
     self.imageManager = imageManager
@@ -50,35 +53,35 @@ public final class SimpleImageTask: Sendable {
   }
   
   public func cancel() {
-    self.lock.lock()
-    switch self.state {
-      case .initialising:
-        self.state = .cancelled
-        self.lock.unlock()
-        
-      case .cacheTask(let simpleImageCacheTask):
-        self.state = .cancelled
-        self.lock.unlock()
-        
-        simpleImageCacheTask.detach(task: self)
-        
-      case .downloadTask(let simpleImageDownloadTask):
-        self.state = .cancelled
-        self.lock.unlock()
-        
-        simpleImageDownloadTask.detach(task: self)
-        
-      case .processingTask(let simpleImageProcessingTask):
-        self.state = .cancelled
-        self.lock.unlock()
-        
-        simpleImageProcessingTask.detach(task: self)
-        
-      case .cancelled, .finished:
-        self.lock.unlock()
+    let previousState = lock.withLock { () -> State? in
+      switch state {
+      case .cancelled, .finished: return nil
+      default:
+        let previous = state
+        state = .cancelled
+        return previous
+      }
     }
+    guard let previousState else { return }
+    switch previousState {
+    case .cacheTask(let task): task.detach(task: self)
+    case .downloadTask(let task): task.detach(task: self)
+    case .processingTask(let task): task.detach(task: self)
+    default: break
+    }
+    completionHandler(self, .failure(CancellationError()), nil)
   }
-  
+
+  func reportProgress(_ fraction: Double) {
+    let active = lock.withLock {
+      switch state {
+      case .cancelled, .finished: return false
+      default: return true
+      }
+    }
+    if active, fraction.isFinite { progressHandler?(min(1, max(0, fraction))) }
+  }
+
   private func beginImageLoading() {
     if self.imageRequest.processors.isEmpty {
       self.loadImageFromNetwork()

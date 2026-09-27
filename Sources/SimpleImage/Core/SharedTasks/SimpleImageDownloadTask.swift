@@ -26,14 +26,15 @@ final class SimpleImageDownloadTask: SimpleImageSharedTask, @unchecked Sendable 
         if let image = try await imageCache.retrieveImage(forKey: imageRequest.unprocessedCacheKey) {
           self.finish(with: .success(image), cacheKey: nil)
         } else {
-          var imageData = try await imageLoader.imageData(for: imageRequest.urlRequest)
+          var imageData = try await imageLoader.imageData(for: imageRequest.urlRequest, progressHandler: { [weak self] in self?.reportProgress($0) })
           
           for imageTransformer in imageTransformers {
             try Task.checkCancellation()
             imageData = try await imageTransformer.transform(data: imageData)
           }
           
-          guard var finalImage = UIImage(data: imageData) else {
+          try Task.checkCancellation()
+          guard let finalImage = UIImage(data: imageData) else {
             throw SimpleImageError.invalidImageData
           }
           

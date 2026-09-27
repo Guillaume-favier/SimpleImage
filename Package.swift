@@ -19,7 +19,11 @@ let package = Package(
         .library(
           name: "SimpleImageCache",
           targets: ["SimpleImageCache"]
-        )
+        ),
+        .library(
+          name: "SimpleImageUIKit",
+          targets: ["SimpleImageUIKit"]
+        ),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -39,6 +43,13 @@ let package = Package(
         ),
         .target(
             name: "SimpleImageCache",
+            dependencies: ["SimpleImage"],
+            swiftSettings: [
+                .enableUpcomingFeature("ApproachableConcurrency"),
+            ],
+        ),
+        .target(
+            name: "SimpleImageUIKit",
             dependencies: ["SimpleImage"],
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
