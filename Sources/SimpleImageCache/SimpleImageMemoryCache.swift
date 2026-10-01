@@ -10,21 +10,21 @@ import SimpleImage
 import UIKit
 
 public final class SimpleImageMemoryCache: SimpleImageCache {
-  public let imageCache: ImageCache
-  
-  public init(imageCache: ImageCache) {
-    self.imageCache = imageCache
+  public let dataCache: DataMemoryCache
+
+  public init(dataCache: DataMemoryCache) {
+    self.dataCache = dataCache
   }
-  
-  public func cacheImage(_ image: UIImage, forKey cacheKey: String) async throws {
-    self.imageCache[cacheKey] = image
+
+  public func cache(_ data: Data, forKey cacheKey: String) async throws {
+    self.dataCache[cacheKey] = data
   }
-  
-  public func retrieveImage(forKey cacheKey: String) async throws -> UIImage? {
-    return self.imageCache[cacheKey]
+
+  public func retrieveData(forKey cacheKey: String) async throws -> Data? {
+    return self.dataCache[cacheKey]
   }
-  
-  public func imageIsCached(forKey cacheKey: String) async -> Bool {
-    return self.imageCache[cacheKey] != nil
+
+  public func isCached(forKey cacheKey: String) async -> Bool {
+    return self.dataCache[cacheKey] != nil
   }
 }

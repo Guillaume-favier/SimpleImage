@@ -11,25 +11,20 @@ import UIKit
 
 public final class SimpleImageDiskCache: SimpleImageCache {
   public let dataCache: DataCache
-  
+
   public init(dataCache: DataCache) {
     self.dataCache = dataCache
   }
-  
-  public func cacheImage(_ image: UIImage, forKey cacheKey: String) async throws {
-    guard let data = image.pngData() else { return }
+
+  public func cache(_ data: Data, forKey cacheKey: String) async throws {
     self.dataCache.storeData(data, for: cacheKey)
   }
-  
-  public func retrieveImage(forKey cacheKey: String) async throws -> UIImage? {
-    guard let data = self.dataCache.cachedData(for: cacheKey) else {
-      return nil
-    }
-    
-    return UIImage(data: data)
+
+  public func retrieveData(forKey cacheKey: String) async throws -> Data? {
+    self.dataCache.cachedData(for: cacheKey)
   }
-  
-  public func imageIsCached(forKey cacheKey: String) async -> Bool {
+
+  public func isCached(forKey cacheKey: String) async -> Bool {
     self.dataCache.containsData(for: cacheKey)
   }
 }
