@@ -9,12 +9,12 @@ private enum AssociatedKeys {
 
 @MainActor
 extension UIImageView {
-  public private(set) var si_currentTask: SimpleImageTask? {
+  public fileprivate(set) var si_currentTask: SimpleImageTask? {
     get { objc_getAssociatedObject(self, &AssociatedKeys.currentTask) as? SimpleImageTask }
     set { objc_setAssociatedObject(self, &AssociatedKeys.currentTask, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
   }
 
-  private var si_requestID: UUID? {
+  fileprivate var si_requestID: UUID? {
     get { objc_getAssociatedObject(self, &AssociatedKeys.requestID) as? UUID }
     set { objc_setAssociatedObject(self, &AssociatedKeys.requestID, newValue, .OBJC_ASSOCIATION_RETAIN_NONATOMIC) }
   }
@@ -39,6 +39,36 @@ extension UIImageView {
       guard let self, self.si_requestID == requestID else { return }
       self.si_currentTask = nil
       if case .success(let image) = result { self.image = image }
+    }
+  }
+}
+
+@MainActor
+public extension SimpleImageAnimatedView {
+  /// Loads an image through the pipeline and plays it when the decoded content
+  /// turns out to be animated, falling back to a still image otherwise.
+  func si_setAnimatedImage(
+    using imageManager: SimpleImageManager,
+    request: URLRequest,
+    processors: [any SimpleImageProcessor] = [],
+    placeholderImage: UIImage? = nil
+  ) {
+    si_cancelImageDownload()
+    si_animatedImage = nil
+    image = placeholderImage
+
+    let requestID = UUID()
+    si_requestID = requestID
+    si_currentTask = imageManager.retrieveImage(request: request, processors: processors) { [weak self] result in
+      guard let self, self.si_requestID == requestID else { return }
+      self.si_currentTask = nil
+      guard case .success(let image) = result else { return }
+
+      if let animatedImage = image.si_animatedImage, animatedImage.isAnimated {
+        self.si_animatedImage = animatedImage
+      } else {
+        self.image = image
+      }
     }
   }
 }
