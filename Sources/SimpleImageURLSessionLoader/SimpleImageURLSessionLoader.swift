@@ -19,7 +19,7 @@ public final class SimpleImageURLSessionLoader: SimpleImageLoader {
     for request: URLRequest,
     progressHandler: @escaping @Sendable (Double) -> Void
   ) async throws -> Data {
-    var (byteStream, response) = try await self.urlSession.bytes(for: request)
+    let (byteStream, response) = try await self.urlSession.bytes(for: request)
     
     let expectedContentLength = Int(response.expectedContentLength)
     var data = Data(capacity: expectedContentLength)
