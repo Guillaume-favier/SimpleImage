@@ -5,32 +5,36 @@
 //  Created by Faizan Durrani on 29/08/2026.
 //
 
-
 import Foundation
 import UIKit
 
 final class SimpleImageProcessingTask: SimpleImageSharedTask, @unchecked Sendable {
   init(
     imageRequest: SimpleImageRequest,
-    image: UIImage,
-    completionHandler: @escaping @Sendable (SimpleImageSharedTask, Result<UIImage, Error>, String?) -> Void,
+    container: ImageContainer,
+    imageCache: SimpleImageCache,
+    completionHandler:
+      @escaping @Sendable (SimpleImageSharedTask, Result<ImageContainer, Error>) -> Void,
   ) {
     super.init(request: imageRequest.urlRequest, completionHandler: completionHandler)
-    
+
     self.state = .waiting { [weak self] in
       guard let self else { return }
-      
+
       do {
-        var image = image
-        
+        var container = container
+
         for processor in imageRequest.processors {
           try Task.checkCancellation()
-          image = try await processor.process(image: image)
+          container = try await processor.process(container: container)
         }
-        
-        self.finish(with: .success(image), cacheKey: imageRequest.cacheKey)
+
+        // Cache the processed result's bytes under the processed cache key.
+        try await imageCache.cache(container.data, forKey: imageRequest.cacheKey)
+
+        self.finish(with: .success(container))
       } catch {
-        self.finish(with: .failure(error), cacheKey: nil)
+        self.finish(with: .failure(error))
       }
     }
   }
