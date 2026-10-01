@@ -13,17 +13,24 @@ let package = Package(
             targets: ["SimpleImage"]
         ),
         .library(
-          name: "SimpleImageURLSessionLoader",
-          targets: ["SimpleImageURLSessionLoader"]
+            name: "SimpleImageURLSessionLoader",
+            targets: ["SimpleImageURLSessionLoader"]
         ),
         .library(
-          name: "SimpleImageCache",
-          targets: ["SimpleImageCache"]
+            name: "SimpleImageCache",
+            targets: ["SimpleImageCache"]
         ),
         .library(
-          name: "SimpleImageUIKit",
-          targets: ["SimpleImageUIKit"]
+            name: "SimpleImageUIKit",
+            targets: ["SimpleImageUIKit"]
         ),
+        .library(
+            name: "SimpleAnimatedImage",
+            targets: ["SimpleAnimatedImage"]
+        ),
+    ],
+    dependencies: [
+        .package(url: "https://github.com/kaishin/Gifu.git", from: "3.4.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -31,35 +38,44 @@ let package = Package(
         .target(
             name: "SimpleImage",
             swiftSettings: [
-                .enableUpcomingFeature("ApproachableConcurrency"),
+                .enableUpcomingFeature("ApproachableConcurrency")
             ],
         ),
         .target(
             name: "SimpleImageURLSessionLoader",
             dependencies: ["SimpleImage"],
             swiftSettings: [
-                .enableUpcomingFeature("ApproachableConcurrency"),
+                .enableUpcomingFeature("ApproachableConcurrency")
             ],
         ),
         .target(
             name: "SimpleImageCache",
             dependencies: ["SimpleImage"],
             swiftSettings: [
-                .enableUpcomingFeature("ApproachableConcurrency"),
+                .enableUpcomingFeature("ApproachableConcurrency")
             ],
         ),
         .target(
             name: "SimpleImageUIKit",
             dependencies: ["SimpleImage"],
             swiftSettings: [
-                .enableUpcomingFeature("ApproachableConcurrency"),
+                .enableUpcomingFeature("ApproachableConcurrency")
+            ],
+        ),
+        .target(
+            name: "SimpleAnimatedImage",
+            dependencies: [
+                .product(name: "Gifu", package: "Gifu")
+            ],
+            swiftSettings: [
+                .enableUpcomingFeature("ApproachableConcurrency")
             ],
         ),
         .testTarget(
             name: "SimpleImageTests",
             dependencies: ["SimpleImage"],
             swiftSettings: [
-                .enableUpcomingFeature("ApproachableConcurrency"),
+                .enableUpcomingFeature("ApproachableConcurrency")
             ],
         ),
     ]

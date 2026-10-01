@@ -1,0 +1,15 @@
+{
+  "originHash" : "7c40c0c556cfb2c43d0b20c529d451a2ddbe3613770415258bd48541be7c8fc7",
+  "pins" : [
+    {
+      "identity" : "gifu",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/kaishin/Gifu.git",
+      "state" : {
+        "revision" : "46434cd816f035271beb16d80f7bc91381cbd8e4",
+        "version" : "3.5.1"
+      }
+    }
+  ],
+  "version" : 3
+}
