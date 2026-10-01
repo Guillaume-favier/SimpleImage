@@ -7,46 +7,45 @@
 
 import Foundation
 import SimpleImage
-import UIKit
 
 public final class SimpleImageCompositeCache: SimpleImageCache {
   let memoryCache: SimpleImageMemoryCache
   let diskCache: SimpleImageDiskCache
-  
+
   public init(memoryCache: SimpleImageMemoryCache, diskCache: SimpleImageDiskCache) {
     self.memoryCache = memoryCache
     self.diskCache = diskCache
   }
-  
-  public func cacheImage(_ image: UIImage, forKey cacheKey: String) async throws {
-    async let mem = self.memoryCache.cacheImage(image, forKey: cacheKey)
-    async let disk = self.diskCache.cacheImage(image, forKey: cacheKey)
-    
+
+  public func cache(_ data: Data, forKey cacheKey: String) async throws {
+    async let mem = self.memoryCache.cache(data, forKey: cacheKey)
+    async let disk = self.diskCache.cache(data, forKey: cacheKey)
+
     _ = try await (mem, disk)
   }
-  
-  public func retrieveImage(forKey cacheKey: String) async throws -> UIImage? {
-    if let image = try await self.memoryCache.retrieveImage(forKey: cacheKey) {
-      return image
+
+  public func retrieveData(forKey cacheKey: String) async throws -> Data? {
+    if let data = try await self.memoryCache.retrieveData(forKey: cacheKey) {
+      return data
     }
-    
-    if let image = try await self.diskCache.retrieveImage(forKey: cacheKey) {
-      try await self.memoryCache.cacheImage(image, forKey: cacheKey)
-      return image
+
+    if let data = try await self.diskCache.retrieveData(forKey: cacheKey) {
+      try await self.memoryCache.cache(data, forKey: cacheKey)
+      return data
     }
-    
+
     return nil
   }
-  
-  public func imageIsCached(forKey cacheKey: String) async -> Bool {
-    if await self.memoryCache.imageIsCached(forKey: cacheKey) {
+
+  public func isCached(forKey cacheKey: String) async -> Bool {
+    if await self.memoryCache.isCached(forKey: cacheKey) {
       return true
     }
-    
-    if await self.diskCache.imageIsCached(forKey: cacheKey) {
+
+    if await self.diskCache.isCached(forKey: cacheKey) {
       return true
     }
-    
+
     return false
   }
 }

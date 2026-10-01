@@ -6,12 +6,11 @@
 //
 
 import Foundation
-import UIKit
 
 public protocol SimpleImageCache: Sendable {
-  func cacheImage(_ image: UIImage, forKey cacheKey: String) async throws
-  
-  func retrieveImage(forKey cacheKey: String) async throws -> UIImage?
-  
-  func imageIsCached(forKey cacheKey: String) async -> Bool
+  func cache(_ data: Data, forKey cacheKey: String) async throws
+
+  func retrieveData(forKey cacheKey: String) async throws -> Data?
+
+  func isCached(forKey cacheKey: String) async -> Bool
 }
