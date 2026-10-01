@@ -257,8 +257,7 @@ public final class SimpleImageTask: Sendable {
       self.state = .finished
       self.lock.unlock()
 
-      // The cache stores compressed bytes, so this boundary is where a
-      // `UIImage` finally materialises. Decode off the caller's thread.
+      // Decode at the last moment — the cache stores bytes.
       switch result {
       case .success(let container):
         Task {

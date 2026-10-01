@@ -45,8 +45,6 @@ extension UIImageView {
 
 @MainActor
 public extension SimpleImageAnimatedView {
-  /// Loads an image through the pipeline and plays it when the decoded content
-  /// turns out to be animated, falling back to a still image otherwise.
   func si_setAnimatedImage(
     using imageManager: SimpleImageManager,
     request: URLRequest,

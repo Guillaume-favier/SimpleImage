@@ -7,32 +7,14 @@ import Foundation
 import ImageIO
 import UIKit
 
-/// A lazily-decoded, memory-bounded animated image (GIF, and any other
-/// multi-frame format ImageIO can read).
-///
-/// Unlike `UIImage.animatedImage(with:duration:)` — which materialises **every**
-/// frame as a decoded bitmap up front and keeps them alive for the lifetime of
-/// the object — `SimpleAnimatedImage` decodes frames on demand and retains only a
-/// small, bounded window of decoded frames in an `NSCache`.
-///
-/// The compressed source `data` is kept around so it can be written to / read
-/// from the disk cache without ever re-encoding (which would flatten the
-/// animation).
 public final class SimpleAnimatedImage: @unchecked Sendable {
-  /// The default maximum number of decoded frames kept in memory.
   public static let defaultCachedFrameLimit = 8
 
-  /// The original, compressed image bytes.
   public let data: Data
-  /// The number of frames in the animation.
   public let frameCount: Int
-  /// The number of times the animation should loop. `0` means infinitely.
   public let loopCount: Int
-  /// The summed duration of a single playback loop.
   public let totalDuration: TimeInterval
-  /// The pixel size of the animation.
   public let size: CGSize
-  /// The scale used for the produced `UIImage`s.
   public let scale: CGFloat
 
   private let source: CGImageSource
@@ -41,27 +23,15 @@ public final class SimpleAnimatedImage: @unchecked Sendable {
   private let queue = DispatchQueue(label: "com.simpleimage.animated.decoder", qos: .userInitiated)
   private let frameCache = NSCache<NSNumber, UIImage>()
 
-  /// `true` when the image contains more than one frame.
   public var isAnimated: Bool { frameCount > 1 }
 
-  /// The maximum number of decoded frames retained in memory.
   public var cachedFrameLimit: Int {
     get { frameCache.countLimit }
     set { frameCache.countLimit = max(1, newValue) }
   }
 
-  /// Creates an animated image from compressed data.
-  ///
-  /// - Parameters:
-  ///   - data: The compressed image data (e.g. GIF bytes).
-  ///   - scale: The scale of the produced `UIImage`s. Defaults to `1`.
-  ///   - maxPixelSize: When provided, frames are downsampled so their longest
-  ///     edge is at most this many pixels. Downsampling drastically reduces the
-  ///     memory used per decoded frame.
   public init?(data: Data, scale: CGFloat = 1, maxPixelSize: CGFloat? = nil) {
-    // `kCGImageSourceShouldCache: false` is critical: we want *no* implicit
-    // frame caching at the ImageIO level, because that is precisely the
-    // "insanely inefficient" behaviour this type exists to avoid.
+    // kCGImageSourceShouldCache: false keeps ImageIO from caching every frame.
     let sourceOptions: [CFString: Any] = [kCGImageSourceShouldCache: false]
     guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions as CFDictionary)
     else {
@@ -89,7 +59,6 @@ public final class SimpleAnimatedImage: @unchecked Sendable {
     self.frameCache.countLimit = Self.defaultCachedFrameLimit
   }
 
-  /// The frame at the given index, decoding it if it isn't already cached.
   public func image(at index: Int) -> UIImage? {
     guard frameCount > 0 else { return nil }
     let resolvedIndex = ((index % frameCount) + frameCount) % frameCount
@@ -106,20 +75,14 @@ public final class SimpleAnimatedImage: @unchecked Sendable {
     return decoded
   }
 
-  /// The first frame, suitable as a static placeholder.
   public var firstFrame: UIImage? { image(at: 0) }
 
-  /// The display duration of the frame at the given index (clamped like browsers).
   public func delay(at index: Int) -> TimeInterval {
     guard !delays.isEmpty else { return Self.defaultDelay }
     let resolvedIndex = ((index % delays.count) + delays.count) % delays.count
     return delays[resolvedIndex]
   }
 
-  /// Warms the frame cache for the frames following `index`.
-  ///
-  /// Call this from the playback loop so the next frames are ready by the time
-  /// they need to be displayed.
   public func prefetch(from index: Int, count: Int = 2) {
     guard isAnimated, count > 0 else { return }
     let start = ((index % frameCount) + frameCount) % frameCount
@@ -136,16 +99,10 @@ public final class SimpleAnimatedImage: @unchecked Sendable {
     }
   }
 
-  /// Drops every decoded frame, releasing the associated bitmaps.
   public func clearFrameCache() {
     frameCache.removeAllObjects()
   }
 
-  /// Returns the first frame with this animation attached to it.
-  ///
-  /// This is what the pipeline surfaces when callers only want a `UIImage`: the
-  /// still is immediately renderable, while `si_animatedImage` gives access to
-  /// the frames when a caller wants to play them.
   public func makeRepresentativeImage() -> UIImage? {
     guard let firstFrame else { return nil }
     firstFrame.si_animatedImage = self
@@ -181,7 +138,6 @@ public final class SimpleAnimatedImage: @unchecked Sendable {
 
   private static let defaultDelay: TimeInterval = 0.1
 
-  /// Reads the frame delay without decoding the frame's bitmap.
   private static func delay(for source: CGImageSource, at index: Int) -> TimeInterval {
     guard
       let properties = CGImageSourceCopyPropertiesAtIndex(source, index, nil) as? [CFString: Any],
@@ -194,7 +150,7 @@ public final class SimpleAnimatedImage: @unchecked Sendable {
     let clamped = (gif[kCGImagePropertyGIFDelayTime] as? NSNumber)?.doubleValue
     let value = unclamped ?? clamped ?? defaultDelay
 
-    // Match modern browsers: anything faster than 20 ms is rendered as 100 ms.
+    // Browsers clamp anything below 20 ms to 100 ms.
     return value < 0.02 ? defaultDelay : value
   }
 
@@ -222,11 +178,6 @@ public final class SimpleAnimatedImage: @unchecked Sendable {
 }
 
 extension SimpleAnimatedImage: ImageContainer {
-  /// Returns the representative (first) frame with this animation attached.
-  ///
-  /// This is what the pipeline surfaces when callers only want a `UIImage`:
-  /// the still is immediately renderable, while `si_animatedImage` enables
-  /// frame-by-frame playback.
   public func uiImage() async throws -> UIImage {
     guard let image = makeRepresentativeImage() else {
       throw SimpleImageError.invalidImageData

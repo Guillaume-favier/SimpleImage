@@ -11,8 +11,6 @@ private enum SimpleImageAssociatedKeys {
 }
 
 extension UIImage {
-  /// The animated source backing this image, when it was decoded from an
-  /// animated format such as GIF.
   public var si_animatedImage: SimpleAnimatedImage? {
     get {
       objc_getAssociatedObject(self, &SimpleImageAssociatedKeys.animatedImage)
@@ -28,6 +26,5 @@ extension UIImage {
     }
   }
 
-  /// Whether this image is backed by a multi-frame animation.
   public var si_isAnimated: Bool { si_animatedImage?.isAnimated ?? false }
 }

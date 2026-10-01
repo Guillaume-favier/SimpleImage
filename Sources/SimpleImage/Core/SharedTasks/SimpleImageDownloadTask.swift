@@ -38,8 +38,7 @@ final class SimpleImageDownloadTask: SimpleImageSharedTask, @unchecked Sendable 
           }
 
           try Task.checkCancellation()
-          // Cache the raw, transformed bytes so animations (and their
-          // compression) survive a round-trip. Decoding happens later.
+          // Cache raw bytes so animations survive the round-trip.
           try await imageCache.cache(imageData, forKey: imageRequest.unprocessedCacheKey)
           data = imageData
         }

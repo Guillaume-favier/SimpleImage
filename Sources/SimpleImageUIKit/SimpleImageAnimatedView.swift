@@ -7,20 +7,6 @@ import Foundation
 import SimpleImage
 import UIKit
 
-/// A `UIImageView` subclass that plays `SimpleAnimatedImage` content (such as
-/// animated GIFs) efficiently.
-///
-/// Playback is driven by a `CADisplayLink` and only the frames near the playhead
-/// are decoded. This is the opposite of `UIImage.animatedImage(with:duration:)`,
-/// which decodes every frame up front.
-///
-/// Usage:
-/// ```swift
-/// let view = SimpleImageAnimatedView()
-/// view.si_animatedImage = myAnimatedImage
-/// // or load through the pipeline:
-/// view.si_setAnimatedImage(using: manager, request: request)
-/// ```
 @MainActor
 public final class SimpleImageAnimatedView: UIImageView {
   private nonisolated(unsafe) var displayLink: CADisplayLink?
@@ -31,20 +17,17 @@ public final class SimpleImageAnimatedView: UIImageView {
   private var completedLoops = 0
   private var isPlaying = false
 
-  /// The animated image being played. Setting it restarts playback from frame 0.
   public var si_animatedImage: SimpleAnimatedImage? {
     get { animatedImage }
     set { apply(animatedImage: newValue) }
   }
 
-  /// Whether playback is currently active.
   public var si_isPlaying: Bool { isPlaying }
 
   public override init(frame: CGRect) {
     super.init(frame: frame)
   }
 
-  /// Lets callers write `SimpleImageAnimatedView()`.
   public convenience init() {
     self.init(frame: .zero)
   }
@@ -67,12 +50,10 @@ public final class SimpleImageAnimatedView: UIImageView {
     }
   }
 
-  /// Starts playback if it isn't already running.
   public func si_startAnimating() {
     startPlayback()
   }
 
-  /// Pauses playback, keeping the current frame on screen.
   public func si_stopAnimating() {
     stopPlayback()
   }
@@ -118,8 +99,7 @@ public final class SimpleImageAnimatedView: UIImageView {
     var didAdvance = false
     var steps = 0
 
-    // Cap the number of frames advanced in a single tick so a stalled display
-    // link can never spin the run loop.
+    // Cap frames per tick so a stalled display link can't spin.
     while elapsed >= animatedImage.delay(at: currentFrameIndex), steps < animatedImage.frameCount {
       elapsed -= animatedImage.delay(at: currentFrameIndex)
       currentFrameIndex += 1
@@ -128,9 +108,7 @@ public final class SimpleImageAnimatedView: UIImageView {
       if currentFrameIndex >= animatedImage.frameCount {
         currentFrameIndex = 0
         completedLoops += 1
-        // GIF spec: loop count 0 = infinite; N = N *additional* loops after the
-        // first play (so N = 1 plays twice). Stop only once we've wrapped past
-        // the requested repeat count.
+        // GIF: 0 = infinite; N = N additional loops after the first play.
         if animatedImage.loopCount > 0, completedLoops > animatedImage.loopCount {
           stopPlayback()
           return
@@ -145,8 +123,7 @@ public final class SimpleImageAnimatedView: UIImageView {
   }
 }
 
-/// Breaks the retain cycle between a `CADisplayLink` (which retains its target)
-/// and the view.
+// Breaks the retain cycle between the CADisplayLink and the view.
 private final class DisplayLinkProxy: NSObject {
   weak var target: SimpleImageAnimatedView?
 

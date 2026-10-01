@@ -29,7 +29,6 @@ final class SimpleImageProcessingTask: SimpleImageSharedTask, @unchecked Sendabl
           container = try await processor.process(container: container)
         }
 
-        // Cache the processed result's bytes under the processed cache key.
         try await imageCache.cache(container.data, forKey: imageRequest.cacheKey)
 
         self.finish(with: .success(container))
