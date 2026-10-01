@@ -58,6 +58,7 @@ let package = Package(
         .testTarget(
             name: "SimpleImageTests",
             dependencies: ["SimpleImage"],
+            path: "Tests/SimpleImageProtocolTests",
             swiftSettings: [
                 .enableUpcomingFeature("ApproachableConcurrency"),
             ],
